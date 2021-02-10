@@ -1,0 +1,12 @@
+import "CameraRGBDSimplePub.idsl";
+import "HumanCameraBody.idsl";
+
+Component ComponentSM
+{
+	Communications
+	{
+		subscribesTo HumanCameraBody, CameraRGBDSimplePub;
+	};
+	language python;
+};
+
