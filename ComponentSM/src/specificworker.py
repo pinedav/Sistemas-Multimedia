@@ -57,6 +57,10 @@ SKELETON_CONNECTIONS = [("left_ankle", "left_knee"),
 class SpecificWorker(GenericWorker):
     def __init__(self, proxy_map, startup_check=False):
         super(SpecificWorker, self).__init__(proxy_map)
+        self.new_image = False
+        self.contPersonas = 0
+        self.xMano = 0
+        self.yMano = 0
         self.Period = 2000
         if startup_check:
             self.startup_check()
@@ -79,14 +83,35 @@ class SpecificWorker(GenericWorker):
     @QtCore.Slot()
     def compute(self):
         print('SpecificWorker.compute...')
-        if new_image:
-            self.imgCV = np.frombuffer(self.imgCruda.image, dtype=np.dtyepe("uint8"))
-            self.imgCV = np.reshape(self.imgCV, (self.imgCruda.height, self.imgCruda.widht))
-        #if new_people:
-            #self.ProcesImg(self.peopleAux, self.imgCruda)
-        cv2.imshow("Imagen Camara", self.imgCV)
-        cv2.waitKey1(1)
+        #self.Almac_Personas()
+        #print(self.contPersonas)
+        #self.Gesto1()
+        #for Num in range(self.contPersonas):
+            #print(self.peopleAux.peoplelist[Num].joints['right_wrist'].y)
+            #print(self.peopleAux.peoplelist[Num].joints['left_wrist'].y)
+
+        # if self.new_image:
+        #     self.imgCV = np.frombuffer(self.imgCruda.image, dtype=np.dtyepe("uint8"))
+        #     self.imgCV = np.reshape(self.imgCV, (self.imgCruda.height, self.imgCruda.widht))
+        # #if new_people:
+        #     #self.ProcesImg(self.peopleAux, self.imgCruda)
+        #     cv2.imshow("Imagen Camara", self.imgCV)
+        #     cv2.waitKey1(1)
         return True
+
+    def Almac_Personas(self):
+        self.contPersonas = len(self.peopleAux.peoplelist)
+        self.contPersonas = self.contPersonas(se)
+
+    def Gesto1(self):
+
+        for Num in range(self.contPersonas):
+            #print(self.peopleAux.peoplelist[Num].joints['right_wrist'].y)
+            if self.peopleAux.peoplelist[Num].joints['right_wrist'].y > 1000:
+                print("Hola")
+            #print(self.peopleAux.peoplelist[Num].joints['left_wrist'].y)
+            if self.peopleAux.peoplelist[Num].joints['left_wrist'].y > 1000:
+                print("Adios")
 
 
     def ProcesImg(self, person, image):
@@ -113,25 +138,24 @@ class SpecificWorker(GenericWorker):
     # ===================================================================
 
     #
+
     # SUBSCRIPTION to pushRGBD method from CameraRGBDSimplePub interface
     #
     def CameraRGBDSimplePub_pushRGBD(self, im, dep):
-    
+
         self.imgCruda=im
-        new_image=TRUE
+        self.new_image=True
 
 
     #
     # SUBSCRIPTION to newPeopleData method from HumanCameraBody interface
     #
     def HumanCameraBody_newPeopleData(self, people):
-    
-        #
-        # write your CODE here
-        #
-        #print (people)
+
+        print(people)
         self.peopleAux=people
-        new_people=TRUE
+        self.new_people=True
+
 
     # ===================================================================
     # ===================================================================
