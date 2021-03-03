@@ -3,6 +3,8 @@ CameraRGBDSimplePubTopic.Endpoints=tcp -p 15000
 HumanCameraBodyTopic.Endpoints=tcp -p 15001
 
 
+viewimage=true
+
 
 # This property is used by the clients to connect to IceStorm.
 TopicManager.Proxy=IceStorm/TopicManager:default -h 10.253.247.80 -p 9999

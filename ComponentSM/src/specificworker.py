@@ -27,9 +27,7 @@ import numpy as np
 
 # If RoboComp was compiled with Python bindings you can use InnerModel in Python
 sys.path.append('/opt/robocomp/lib')
-# import librobocomp_qmat
-# import librobocomp_osgviewer
-# import librobocomp_innermodel
+
 COCO_IDS = ["nose", "left_eye", "right_eye", "left_ear", "right_ear", "left_shoulder", "right_shoulder", "left_elbow",
             "right_elbow", "left_wrist", "right_wrist", "left_hip", "right_hip", "left_knee", "right_knee",
             "left_ankle", "right_ankle"]
@@ -61,7 +59,7 @@ class SpecificWorker(GenericWorker):
         self.contPersonas = 0
         self.xMano = 0
         self.yMano = 0
-        self.Period = 2000
+        self.Period = 50
         if startup_check:
             self.startup_check()
         else:
@@ -72,17 +70,14 @@ class SpecificWorker(GenericWorker):
         print('SpecificWorker destructor')
 
     def setParams(self, params):
-        #try:
-        #	self.innermodel = InnerModel(params["InnerModelPath"])
-        #except:
-        #	traceback.print_exc()
-        #	print("Error reading config params")
+        self.params = params
+        self.viewimage = "true" in self.params["viewimage"]
         return True
 
 
     @QtCore.Slot()
     def compute(self):
-        print('SpecificWorker.compute...')
+        #print('SpecificWorker.compute...')
         #self.Almac_Personas()
         #print(self.contPersonas)
         #self.Gesto1()
@@ -90,13 +85,13 @@ class SpecificWorker(GenericWorker):
             #print(self.peopleAux.peoplelist[Num].joints['right_wrist'].y)
             #print(self.peopleAux.peoplelist[Num].joints['left_wrist'].y)
 
-        # if self.new_image:
-        #     self.imgCV = np.frombuffer(self.imgCruda.image, dtype=np.dtyepe("uint8"))
-        #     self.imgCV = np.reshape(self.imgCV, (self.imgCruda.height, self.imgCruda.widht))
-        # #if new_people:
-        #     #self.ProcesImg(self.peopleAux, self.imgCruda)
-        #     cv2.imshow("Imagen Camara", self.imgCV)
-        #     cv2.waitKey1(1)
+        if self.new_image:
+          self.imgCV = np.frombuffer(self.imgCruda.image, np.uint8).reshape(self.imgCruda.height, self.imgCruda.width, self.imgCruda.depth)
+          self.new_image = False
+        if self.new_people:
+            self.ProcesImg(self.people, self.imgCV)
+            cv2.imshow("Camera " + str(self.imgCruda.cameraID), self.imgCV)
+            cv2.waitKey(1)
         return True
 
     def Almac_Personas(self):
@@ -114,21 +109,22 @@ class SpecificWorker(GenericWorker):
                 print("Adios")
 
 
-    def ProcesImg(self, person, image):
+    def ProcesImg(self, people, image):
         # draw
         if self.viewimage:
-            for name1, name2 in SKELETON_CONNECTIONS:
-                try:
-                    joint1 = person.joints[name1]
-                    joint2 = person.joints[name2]
-                    if joint1.score > 0.5:
-                        cv2.circle(image, (joint1.i, joint1.j), 10, (0, 0, 255))
-                    if joint2.score > 0.5:
-                        cv2.circle(image, (joint2.i, joint2.j), 10, (0, 0, 255))
-                    if joint1.score > 0.5 and joint2.score > 0.5:
-                        cv2.line(image, (joint1.i, joint1.j), (joint2.i, joint2.j), (0, 255, 0), 2)
-                except:
-                    pass
+            for person in people.peoplelist:
+                for name1, name2 in SKELETON_CONNECTIONS:
+                    try:
+                        joint1 = person.joints[name1]
+                        joint2 = person.joints[name2]
+                        if joint1.score > 0.5:
+                            cv2.circle(image, (joint1.i, joint1.j), 10, (0, 0, 255))
+                        if joint2.score > 0.5:
+                            cv2.circle(image, (joint2.i, joint2.j), 10, (0, 0, 255))
+                        if joint1.score > 0.5 and joint2.score > 0.5:
+                            cv2.line(image, (joint1.i, joint1.j), (joint2.i, joint2.j), (0, 255, 0), 2)
+                    except:
+                        pass
     #################################################################################################
     def startup_check(self):
         QTimer.singleShot(200, QApplication.instance().quit)
@@ -143,17 +139,12 @@ class SpecificWorker(GenericWorker):
     #
     def CameraRGBDSimplePub_pushRGBD(self, im, dep):
 
+        #print("publish")
         self.imgCruda=im
         self.new_image=True
 
-
-    #
-    # SUBSCRIPTION to newPeopleData method from HumanCameraBody interface
-    #
     def HumanCameraBody_newPeopleData(self, people):
-
-        print(people)
-        self.peopleAux=people
+        self.people = people
         self.new_people=True
 
 

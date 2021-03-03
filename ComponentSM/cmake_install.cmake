@@ -1,4 +1,4 @@
-# Install script for directory: /home/manu/robocomp/components/ProyectoMM/Sistemas-Multimedia/ComponentSM
+# Install script for directory: /home/robo02/robocomp/components/Sistemas-Multimedia/ComponentSM
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -37,14 +37,9 @@ if(NOT DEFINED CMAKE_CROSSCOMPILING)
   set(CMAKE_CROSSCOMPILING "FALSE")
 endif()
 
-# Set default install directory permissions.
-if(NOT DEFINED CMAKE_OBJDUMP)
-  set(CMAKE_OBJDUMP "/usr/bin/objdump")
-endif()
-
 if(NOT CMAKE_INSTALL_LOCAL_ONLY)
   # Include the install script for each subdirectory.
-  include("/home/manu/robocomp/components/ProyectoMM/Sistemas-Multimedia/ComponentSM/src/cmake_install.cmake")
+  include("/home/robo02/robocomp/components/Sistemas-Multimedia/ComponentSM/src/cmake_install.cmake")
 
 endif()
 
@@ -56,5 +51,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/manu/robocomp/components/ProyectoMM/Sistemas-Multimedia/ComponentSM/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/robo02/robocomp/components/Sistemas-Multimedia/ComponentSM/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
