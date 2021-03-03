@@ -1,5 +1,0 @@
-/home/robo02/robocomp/components/Sistemas-Multimedia/ComponentSM/CMakeFiles/rebuild_cache.dir
-/home/robo02/robocomp/components/Sistemas-Multimedia/ComponentSM/CMakeFiles/edit_cache.dir
-/home/robo02/robocomp/components/Sistemas-Multimedia/ComponentSM/src/CMakeFiles/rebuild_cache.dir
-/home/robo02/robocomp/components/Sistemas-Multimedia/ComponentSM/src/CMakeFiles/edit_cache.dir
-/home/robo02/robocomp/components/Sistemas-Multimedia/ComponentSM/src/CMakeFiles/ICES__home_robo02_robocomp_components_Sistemas-Multimedia_ComponentSM_src.dir
