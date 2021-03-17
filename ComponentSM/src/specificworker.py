@@ -21,6 +21,9 @@
 
 from PySide2.QtCore import QTimer
 from PySide2.QtWidgets import QApplication
+from PySide2.QtGui import (QGuiApplication, QMatrix4x4, QQuaternion, QVector3D)
+from PySide2.Qt3DCore import (Qt3DCore)
+from PySide2.Qt3DExtras import (Qt3DExtras)
 from genericworker import *
 import cv2
 import numpy as np
@@ -56,6 +59,44 @@ SKELETON_CONNECTIONS = [("left_ankle", "left_knee"),
                         ("left_ear", "left_shoulder"),
                         ("right_ear", "right_shoulder")]
 
+class Window(Qt3DExtras.Qt3DWindow):
+    def __init__(self):
+        super(Window, self).__init__()
+
+        # Camera
+        self.camera().lens().setPerspectiveProjection(45, 16 / 9, 0.1, 1000)
+        self.camera().setPosition(QVector3D(0, 0, 40))
+        self.camera().setViewCenter(QVector3D(0, 0, 0))
+
+        # For camera controls
+        self.createScene()
+        self.camController = Qt3DExtras.QOrbitCameraController(self.rootEntity)
+        self.camController.setLinearSpeed(50)
+        self.camController.setLookSpeed(180)
+        self.camController.setCamera(self.camera())
+
+        self.setRootEntity(self.rootEntity)
+
+
+    def createScene(self):
+        # Root entity
+        self.rootEntity = Qt3DCore.QEntity()
+
+        # Material
+        self.material = Qt3DExtras.QPhongMaterial(self.rootEntity)
+
+        # Sphere
+        self.sphereEntity = Qt3DCore.QEntity(self.rootEntity)
+        self.sphereMesh = Qt3DExtras.QSphereMesh()
+        self.sphereMesh.setRadius(3)
+        self.sphereTransform = Qt3DCore.QTransform()
+
+        self.sphereEntity.addComponent(self.sphereMesh)
+        self.sphereEntity.addComponent(self.sphereTransform)
+        self.sphereEntity.addComponent(self.material)
+
+
+
 
 class SpecificWorker(GenericWorker):
     def __init__(self, proxy_map, startup_check=False):
@@ -83,9 +124,10 @@ class SpecificWorker(GenericWorker):
         self.params = params
         self.viewimage = "true" in self.params["viewimage"]
 
-        fig = plt.figure()
-        ax1 = fig.add_subplot(111, projection='3d')
-        plt.show()
+
+        self.view = Window()
+        self.view.show()
+
 
         return True
 
