@@ -80,39 +80,20 @@ class SpecificWorker(GenericWorker):
         self.viewimage = "true" in self.params["viewimage"]
         return True
 
-    # @QtCore.Slot()
-    # def compute(self):
-    #     #print('SpecificWorker.compute...')
-    #     #self.Almac_Personas()
-    #     #print(self.contPersonas)
-    #     #self.Gesto1()
-    #     #for Num in range(self.contPersonas):
-    #         #print(self.peopleAux.peoplelist[Num].joints['right_wrist'].y)
-    #         #print(self.peopleAux.peoplelist[Num].joints['left_wrist'].y)
-    #
-    #     if self.new_image:
-    #       self.imgCV = np.frombuffer(self.imgCruda.image, np.uint8).reshape(self.imgCruda.height, self.imgCruda.width, self.imgCruda.depth)
-    #       self.new_image = False
-    #     if self.new_people:
-    #         self.ProcesImg(self.people, self.imgCV)
-    #         cv2.imshow("Camera " + str(self.imgCruda.cameraID), self.imgCV)
-    #         cv2.waitKey(1)
-    #     return True
-
     @QtCore.Slot()
     def compute(self):
-        self.count += 1
 
         if self.new_image:
+            self.count += 1
+
             self.cameras[self.imgCruda.cameraID] = np.frombuffer(self.imgCruda.image, np.uint8).reshape(
                 self.imgCruda.height, self.imgCruda.width, self.imgCruda.depth)
             cv2.putText(self.cameras[self.imgCruda.cameraID], str(self.total) + ' fps', (10, 450),
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 1, cv2.LINE_AA)
             cv2.putText(self.cameras[self.imgCruda.cameraID], str(len(self.people.peoplelist)) + ' bodies', (500, 450),
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 1, cv2.LINE_AA)
-            self.new_image = False
 
-            if self.new_people:
+            if self.new_people and self.people.cameraId == self.imgCruda.cameraID:
                 #self.transform_to_world(self.people)
                 self.cameras[self.imgCruda.cameraID] = self.draw_body(self.people, self.cameras[self.imgCruda.cameraID])
 
@@ -124,6 +105,8 @@ class SpecificWorker(GenericWorker):
                 self.ui.label_img_left.setPixmap(pix)
             if self.imgCruda.cameraID == 3:
                 self.ui.label_img_right.setPixmap(pix)
+
+            self.new_image = False
 
         if time.time() - self.begin > 1:
             self.total = self.count
