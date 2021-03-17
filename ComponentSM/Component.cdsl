@@ -8,5 +8,7 @@ Component ComponentSM
 		subscribesTo HumanCameraBody, CameraRGBDSimplePub;
 	};
 	language python;
+	gui Qt(QWidget);
+
 };
 
