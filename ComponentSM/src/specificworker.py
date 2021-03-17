@@ -70,6 +70,7 @@ class Window(Qt3DExtras.Qt3DWindow):
 
         # For camera controls
         self.createScene()
+        #self.addSphere(2,-2,-2,2,10,10)
         self.camController = Qt3DExtras.QOrbitCameraController(self.rootEntity)
         self.camController.setLinearSpeed(50)
         self.camController.setLookSpeed(180)
@@ -85,17 +86,46 @@ class Window(Qt3DExtras.Qt3DWindow):
         # Material
         self.material = Qt3DExtras.QPhongMaterial(self.rootEntity)
 
+
         # Sphere
+        #self.sphereEntity = Qt3DCore.QEntity(self.rootEntity)
+        #self.sphereMesh = Qt3DExtras.QSphereMesh()
+        #self.sphereMesh.setRadius(3)
+        #self.sphereTransform = Qt3DCore.QTransform()
+
+        #self.sphereEntity.addComponent(self.sphereMesh)
+        #self.sphereEntity.addComponent(self.sphereTransform)
+        #self.sphereEntity.addComponent(self.material)
+
+    def add_cylinder(self, radius, length, x, y, z, rings=10, slices=10):
+        self.cylinderEntity = Qt3DCore.QEntity(self.rootEntity)
+        self.cylinderMesh = Qt3DExtras.QCylinderMesh()
+        self.cylinderMesh.setRadius(radius)
+        self.cylinderMesh.setLength(length)
+        self.cylinderMesh.setSlices(rings)
+        self.cylinderMesh.setRings(slices)
+        self.cylinderTransform = Qt3DCore.QTransform()
+        self.cylinderTransform.setTranslation(QVector3D(x, y, z))
+
+        self.cylinderEntity.addComponent(self.cylinderMesh)
+        self.cylinderEntity.addComponent(self.material)
+        self.cylinderEntity.addComponent(self.cylinderTransform)
+
+
+    def addSphere(self,radius, x, y, z, rings=10, slices=10):
+
+
         self.sphereEntity = Qt3DCore.QEntity(self.rootEntity)
         self.sphereMesh = Qt3DExtras.QSphereMesh()
-        self.sphereMesh.setRadius(3)
+        self.sphereMesh.setRadius(radius)
+        self.sphereMesh.setSlices(rings)
+        self.sphereMesh.setRings(slices)
         self.sphereTransform = Qt3DCore.QTransform()
+        self.sphereTransform.setTranslation(QVector3D(x, y, z))
 
         self.sphereEntity.addComponent(self.sphereMesh)
-        self.sphereEntity.addComponent(self.sphereTransform)
         self.sphereEntity.addComponent(self.material)
-
-
+        self.sphereEntity.addComponent(self.sphereTransform)
 
 
 class SpecificWorker(GenericWorker):
@@ -127,6 +157,7 @@ class SpecificWorker(GenericWorker):
 
         self.view = Window()
         self.view.show()
+
 
 
         return True
@@ -166,6 +197,9 @@ class SpecificWorker(GenericWorker):
             self.count = 0
             self.begin = time.time()
 
+        self.view.addSphere(3,0,0,0,50,50)
+        self.view.add_cylinder(3, 20, 3, 0, 0, 200, 2)
+
 
 
     def prueba(self):
@@ -189,6 +223,8 @@ class SpecificWorker(GenericWorker):
         ax.set_ylim((-3000, 3000))
         ax.set_zlim((0, 4000))
         plt.draw()
+
+
 
     def transform_to_world(self, people):
         for person in people.peoplelist:
