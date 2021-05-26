@@ -21,6 +21,7 @@
 
 from PySide2.QtCore import QTimer
 from PySide2.QtWidgets import QApplication
+from PySide2.QtGui import QBrush, QPen
 from PySide2.QtGui import (QGuiApplication, QMatrix4x4, QQuaternion, QVector3D)
 from PySide2.Qt3DCore import (Qt3DCore)
 from PySide2.Qt3DExtras import (Qt3DExtras)
@@ -28,10 +29,6 @@ from genericworker import *
 import cv2
 import numpy as np
 import time
-import matplotlib.pyplot as plt
-from pytransform3d import rotations as pr
-from pytransform3d import transformations as pt
-from pytransform3d.transform_manager import TransformManager
 
 # If RoboComp was compiled with Python bindings you can use InnerModel in Python
 sys.path.append('/opt/robocomp/lib')
@@ -59,73 +56,6 @@ SKELETON_CONNECTIONS = [("left_ankle", "left_knee"),
                         ("left_ear", "left_shoulder"),
                         ("right_ear", "right_shoulder")]
 
-class Window(Qt3DExtras.Qt3DWindow):
-    def __init__(self):
-        super(Window, self).__init__()
-
-        # Camera
-        self.camera().lens().setPerspectiveProjection(45, 16 / 9, 0.1, 1000)
-        self.camera().setPosition(QVector3D(0, 0, 40))
-        self.camera().setViewCenter(QVector3D(0, 0, 0))
-
-        # For camera controls
-        self.createScene()
-        #self.addSphere(2,-2,-2,2,10,10)
-        self.camController = Qt3DExtras.QOrbitCameraController(self.rootEntity)
-        self.camController.setLinearSpeed(50)
-        self.camController.setLookSpeed(180)
-        self.camController.setCamera(self.camera())
-
-        self.setRootEntity(self.rootEntity)
-
-
-    def createScene(self):
-        # Root entity
-        self.rootEntity = Qt3DCore.QEntity()
-
-        # Material
-        self.material = Qt3DExtras.QPhongMaterial(self.rootEntity)
-
-
-        # Sphere
-        #self.sphereEntity = Qt3DCore.QEntity(self.rootEntity)
-        #self.sphereMesh = Qt3DExtras.QSphereMesh()
-        #self.sphereMesh.setRadius(3)
-        #self.sphereTransform = Qt3DCore.QTransform()
-
-        #self.sphereEntity.addComponent(self.sphereMesh)
-        #self.sphereEntity.addComponent(self.sphereTransform)
-        #self.sphereEntity.addComponent(self.material)
-
-    def add_cylinder(self, radius, length, x, y, z, rings=10, slices=10):
-        self.cylinderEntity = Qt3DCore.QEntity(self.rootEntity)
-        self.cylinderMesh = Qt3DExtras.QCylinderMesh()
-        self.cylinderMesh.setRadius(radius)
-        self.cylinderMesh.setLength(length)
-        self.cylinderMesh.setSlices(rings)
-        self.cylinderMesh.setRings(slices)
-        self.cylinderTransform = Qt3DCore.QTransform()
-        self.cylinderTransform.setTranslation(QVector3D(x, y, z))
-
-        self.cylinderEntity.addComponent(self.cylinderMesh)
-        self.cylinderEntity.addComponent(self.material)
-        self.cylinderEntity.addComponent(self.cylinderTransform)
-
-
-    def addSphere(self,radius, x, y, z, rings=10, slices=10):
-
-
-        self.sphereEntity = Qt3DCore.QEntity(self.rootEntity)
-        self.sphereMesh = Qt3DExtras.QSphereMesh()
-        self.sphereMesh.setRadius(radius)
-        self.sphereMesh.setSlices(rings)
-        self.sphereMesh.setRings(slices)
-        self.sphereTransform = Qt3DCore.QTransform()
-        self.sphereTransform.setTranslation(QVector3D(x, y, z))
-
-        self.sphereEntity.addComponent(self.sphereMesh)
-        self.sphereEntity.addComponent(self.material)
-        self.sphereEntity.addComponent(self.sphereTransform)
 
 
 class SpecificWorker(GenericWorker):
@@ -140,6 +70,15 @@ class SpecificWorker(GenericWorker):
         self.total = 0
         self.begin = time.time()
         self.cameras = {}
+        self.new_people = False
+        self.scene = QGraphicsScene()
+        self.ui.graphicsView.setScene(self.scene)
+        self.ui.graphicsView.scale(1,-1)
+        self.scene.setSceneRect(-3000, -1500, 6000, 3000)
+        self.ui.graphicsView.fitInView(self.scene.sceneRect())
+        self.elipse_l = self.scene.addEllipse(0, 0, 200, 200, QPen(Qt.black), QBrush(Qt.red))
+        self.elipse_r = self.scene.addEllipse(0, 0, 200, 200, QPen(Qt.black), QBrush(Qt.blue))
+
 
         if startup_check:
             self.startup_check()
@@ -155,17 +94,12 @@ class SpecificWorker(GenericWorker):
         self.viewimage = "true" in self.params["viewimage"]
 
 
-        self.view = Window()
-        self.view.show()
-
 
 
         return True
 
     @QtCore.Slot()
     def compute(self):
-
-        self.prueba()
 
         if self.new_image:
             self.count += 1
@@ -174,11 +108,12 @@ class SpecificWorker(GenericWorker):
                 self.imgCruda.height, self.imgCruda.width, self.imgCruda.depth)
             cv2.putText(self.cameras[self.imgCruda.cameraID], str(self.total) + ' fps', (10, 450),
                         cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 1, cv2.LINE_AA)
-            cv2.putText(self.cameras[self.imgCruda.cameraID], str(len(self.people.peoplelist)) + ' bodies', (500, 450),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 1, cv2.LINE_AA)
+            if self.new_people:
+                cv2.putText(self.cameras[self.imgCruda.cameraID], str(len(self.people.peoplelist)) + ' bodies', (500, 450),
+                            cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 1, cv2.LINE_AA)
+                self.pintar_scene(self.people)
 
             if self.new_people and self.people.cameraId == self.imgCruda.cameraID:
-                #self.transform_to_world(self.people)
                 self.cameras[self.imgCruda.cameraID] = self.draw_body(self.people, self.cameras[self.imgCruda.cameraID])
 
             self.cameras[self.imgCruda.cameraID] = cv2.cvtColor(self.cameras[self.imgCruda.cameraID], cv2.COLOR_BGR2RGB)
@@ -191,59 +126,12 @@ class SpecificWorker(GenericWorker):
                 self.ui.label_img_right.setPixmap(pix)
 
             self.new_image = False
+            self.new_people = False
 
         if time.time() - self.begin > 1:
             self.total = self.count
             self.count = 0
             self.begin = time.time()
-
-        self.view.addSphere(3,0,0,0,50,50)
-        self.view.add_cylinder(3, 20, 3, 0, 0, 200, 2)
-
-
-
-    def prueba(self):
-        object2cam = pt.transform_from(
-            pr.active_matrix_from_intrinsic_euler_xyz(np.array([1.25, -0.028, -0.06])),
-            np.array([381, 761, -3173]))
-
-        object2cam2 = pt.transform_from(
-            pr.active_matrix_from_intrinsic_euler_xyz(np.array([-2.04, -3.13, 0.09])),
-            np.array([-192, 254, -3408]))
-
-        tm = TransformManager()
-        tm.add_transform("object", "camera", object2cam)
-        tm.add_transform("object", "camera2", object2cam2)
-
-        p = pt.transform(tm.get_transform("camera", "object"), np.array([0, 0, 0, 1]))
-
-        ax = tm.plot_frames_in("object", s=500)
-        ax.scatter(p[0], p[1], p[2])
-        ax.set_xlim((-1000, 3000))
-        ax.set_ylim((-3000, 3000))
-        ax.set_zlim((0, 4000))
-        plt.draw()
-
-
-
-    def transform_to_world(self, people):
-        for person in people.peoplelist:
-            for name1, name2 in SKELETON_CONNECTIONS:
-                try:
-                    joint1 = person.joints[name1]
-                    joint2 = person.joints[name2]
-                    if joint1.score > 0.5 and joint2.score > 0.5:
-                        p = pt.transform(self.tm.get_transform("camera_1", "object"),
-                                         np.array([joint1.x, joint1.y, joint1.z, 1]))
-
-                        ax = self.tm.plot_frames_in("object", s=500)
-                        ax.scatter(p[0], p[1], p[2])
-                        ax.set_xlim((-1000, 3000))
-                        ax.set_ylim((-3000, 3000))
-                        ax.set_zlim((-2000.0, 4000))
-                        plt.show()
-                except:
-                    pass
 
         # Draw body parts on image
 
@@ -260,12 +148,34 @@ class SpecificWorker(GenericWorker):
                     if joint1.score > 0.5 and joint2.score > 0.5:
                         cv2.line(image, (joint1.i, joint1.j), (joint2.i, joint2.j), (0, 255, 0), 2)
                 except:
+                    #print("No joint in list ", name1, name2)
                     pass
         return image
+    def pintar_scene(self, people):
+        for person in people.peoplelist:
+            try:
+                H_derecho_x = person.joints["right_shoulder"].xw
+                H_derecho_y = person.joints["right_shoulder"].yw
+                H_izquierdo_x = person.joints["left_shoulder"].xw
+                H_izquierdo_y = person.joints["left_shoulder"].yw
 
+                P_medio_x = H_derecho_x + H_izquierdo_x
+                P_medio_y = H_derecho_y + H_izquierdo_y
+                P_medio_x = P_medio_x / 2
+                P_medio_y = P_medio_y / 2
+
+                if people.cameraId == 1:
+                    print("Camara 1: Coordenada x", P_medio_x, "Coordenada y", P_medio_y)
+                    self.elipse_l.setPos(P_medio_x, P_medio_y)
+                if people.cameraId == 3:
+                    print("Camara 3: Coordenada x", P_medio_x, "Coordenada y", P_medio_y)
+                    self.elipse_r.setPos(P_medio_x, P_medio_y)
+
+            except:
+                pass
     def Almac_Personas(self):
         self.contPersonas = len(self.peopleAux.peoplelist)
-        self.contPersonas = self.contPersonas(se)
+
 
     def Gesto1(self):
 
@@ -308,14 +218,14 @@ class SpecificWorker(GenericWorker):
     #
     def CameraRGBDSimplePub_pushRGBD(self, im, dep):
 
-        #print("publish")
         self.imgCruda=im
         self.new_image=True
 
     def HumanCameraBody_newPeopleData(self, people):
-        self.people = people
-        self.new_people=True
 
+        self.people = people
+        if self.people:
+            self.new_people = True
 
     # ===================================================================
     # ===================================================================
