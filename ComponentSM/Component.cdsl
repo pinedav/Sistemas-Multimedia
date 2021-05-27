@@ -1,10 +1,12 @@
 import "CameraRGBDSimplePub.idsl";
 import "HumanCameraBody.idsl";
+import "CameraRGBDSimple.idsl";
 
 Component ComponentSM
 {
 	Communications
 	{
+	    requires CameraRGBDSimple;
 		subscribesTo HumanCameraBody, CameraRGBDSimplePub;
 	};
 	language python;

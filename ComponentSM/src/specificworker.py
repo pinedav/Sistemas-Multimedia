@@ -93,13 +93,15 @@ class SpecificWorker(GenericWorker):
         self.params = params
         self.viewimage = "true" in self.params["viewimage"]
 
-
-
-
         return True
 
     @QtCore.Slot()
     def compute(self):
+
+        try:
+            res = self.camerargbdsimple_proxy.getImage("0")
+        except Ice.Exception as e:
+            print(e)
 
         if self.new_image:
             self.count += 1
@@ -218,11 +220,13 @@ class SpecificWorker(GenericWorker):
     #
     def CameraRGBDSimplePub_pushRGBD(self, im, dep):
 
+        print("hol2")
         self.imgCruda=im
         self.new_image=True
 
     def HumanCameraBody_newPeopleData(self, people):
 
+        print("hol2")
         self.people = people
         if self.people:
             self.new_people = True

@@ -3,6 +3,9 @@ CameraRGBDSimplePubTopic.Endpoints=tcp -p 15000
 HumanCameraBodyTopic.Endpoints=tcp -p 15001
 
 
+# Proxies for required interfaces
+CameraRGBDSimpleProxy = camerargbdsimple:tcp -h 158.49.247.131 -p 10096
+
 viewimage=true
 
 

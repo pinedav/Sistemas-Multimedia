@@ -55,49 +55,23 @@
 #
 #
 
-import sys
-import traceback
-import IceStorm
-import time
-import os
-import copy
 import argparse
 # Ctrl+c handling
 import signal
 
+from rich.console import Console
+console = Console()
+
 from PySide2 import QtCore
 from PySide2 import QtWidgets
-
+import interfaces
 from specificworker import *
-
-
-class CommonBehaviorI(RoboCompCommonBehavior.CommonBehavior):
-    def __init__(self, _handler):
-        self.handler = _handler
-    def getFreq(self, current = None):
-        self.handler.getFreq()
-    def setFreq(self, freq, current = None):
-        self.handler.setFreq()
-    def timeAwake(self, current = None):
-        try:
-            return self.handler.timeAwake()
-        except:
-            print('Problem getting timeAwake')
-    def killYourSelf(self, current = None):
-        self.handler.killYourSelf()
-    def getAttrList(self, current = None):
-        try:
-            return self.handler.getAttrList()
-        except:
-            print('Problem getting getAttrList')
-            traceback.print_exc()
-            status = 1
-            return
 
 #SIGNALS handler
 def sigint_handler(*args):
     QtCore.QCoreApplication.quit()
-    
+
+
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     parser = argparse.ArgumentParser()
@@ -105,81 +79,16 @@ if __name__ == '__main__':
     parser.add_argument('--startup-check', action='store_true')
 
     args = parser.parse_args()
+    interface_manager = interfaces.InterfaceManager(args.iceconfigfile)
 
-    ic = Ice.initialize(args.iceconfigfile)
-    status = 0
-    mprx = {}
-    parameters = {}
-    for i in ic.getProperties():
-        parameters[str(i)] = str(ic.getProperties().getProperty(i))
-
-    # Topic Manager
-    proxy = ic.getProperties().getProperty("TopicManager.Proxy")
-    obj = ic.stringToProxy(proxy)
-    try:
-        topicManager = IceStorm.TopicManagerPrx.checkedCast(obj)
-    except Ice.ConnectionRefusedException as e:
-        print(colored('Cannot connect to rcnode! This must be running to use pub/sub.', 'red'))
-        exit(1)
-    if status == 0:
-        worker = SpecificWorker(mprx, args.startup_check)
-        worker.setParams(parameters)
+    if interface_manager.status == 0:
+        worker = SpecificWorker(interface_manager.get_proxies_map(), args.startup_check)
+        worker.setParams(interface_manager.parameters)
     else:
         print("Error getting required connections, check config file")
         sys.exit(-1)
 
-
-    CameraRGBDSimplePub_adapter = ic.createObjectAdapter("CameraRGBDSimplePubTopic")
-    camerargbdsimplepubI_ = camerargbdsimplepubI.CameraRGBDSimplePubI(worker)
-    camerargbdsimplepub_proxy = CameraRGBDSimplePub_adapter.addWithUUID(camerargbdsimplepubI_).ice_oneway()
-
-    subscribeDone = False
-    while not subscribeDone:
-        try:
-            camerargbdsimplepub_topic = topicManager.retrieve("CameraRGBDSimplePub")
-            subscribeDone = True
-        except Ice.Exception as e:
-            print("Error. Topic does not exist (creating)")
-            time.sleep(1)
-            try:
-                camerargbdsimplepub_topic = topicManager.create("CameraRGBDSimplePub")
-                subscribeDone = True
-            except:
-                print("Error. Topic could not be created. Exiting")
-                status = 0
-    qos = {}
-    camerargbdsimplepub_topic.subscribeAndGetPublisher(qos, camerargbdsimplepub_proxy)
-    CameraRGBDSimplePub_adapter.activate()
-
-
-    HumanCameraBody_adapter = ic.createObjectAdapter("HumanCameraBodyTopic")
-    humancamerabodyI_ = humancamerabodyI.HumanCameraBodyI(worker)
-    humancamerabody_proxy = HumanCameraBody_adapter.addWithUUID(humancamerabodyI_).ice_oneway()
-
-    subscribeDone = False
-    while not subscribeDone:
-        try:
-            humancamerabody_topic = topicManager.retrieve("HumanCameraBody")
-            subscribeDone = True
-        except Ice.Exception as e:
-            print("Error. Topic does not exist (creating)")
-            time.sleep(1)
-            try:
-                humancamerabody_topic = topicManager.create("HumanCameraBody")
-                subscribeDone = True
-            except:
-                print("Error. Topic could not be created. Exiting")
-                status = 0
-    qos = {}
-    humancamerabody_topic.subscribeAndGetPublisher(qos, humancamerabody_proxy)
-    HumanCameraBody_adapter.activate()
-
+    interface_manager.set_default_hanlder(worker)
     signal.signal(signal.SIGINT, sigint_handler)
     app.exec_()
-
-    if ic:
-        # try:
-        ic.destroy()
-        # except:
-        #     traceback.print_exc()
-        #     status = 1
+    interface_manager.destroy()
